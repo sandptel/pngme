@@ -1,32 +1,28 @@
 
 #![allow(unused_variables)]
 
-use std::arch::x86_64;
-
-use crate::chunk_type;
-fn main() {
 use std::convert::TryFrom;
 use std::fmt;
 use std::str::FromStr;
-
+use std::error::Error;
+use thiserror::Error;
 // use crate::{Error, Result};
 
-/// A validated PNG chunk type. See the PNG spec for more details.
-/// http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ChunkType {
-    data:Vec<u8>,
+#[derive(Debug,Error, Clone, PartialEq, Eq)]
+pub enum ChunkTypeError {
+    #[error("Invalid chunk type")]
+    InvalidChunkType,
 }
-
-pub enum Error {
-    InvalidByteValue,
-    // Other error variants...
+#[derive(Debug,Error, Clone, PartialEq, Eq)]
+pub struct ChunkType {
+    // Write this to store the raw bytes of the chunk type
+    bytes: [u8; 4],
 }
 
 impl ChunkType {
     /// Returns the raw bytes contained in this chunk
     pub fn bytes(&self) -> [u8; 4] {
-        todo!()
+        self.bytes
     }
 
     /// Returns the property state of the first byte as described in the PNG spec
@@ -52,57 +48,72 @@ impl ChunkType {
     /// Returns true if the reserved byte is valid and all four bytes are represented by the characters A-Z or a-z.
     /// Note that this chunk type should always be valid as it is validated during construction.
     pub fn is_valid(&self) -> bool {
-        todo!()
+        for byte in self.bytes().iter()
+        {
+            if !Self::is_valid_byte(*byte)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     /// Valid bytes are represented by the characters A-Z or a-z
     pub fn is_valid_byte(byte: u8) -> bool {
-        todo!()
+        byte>=65 && byte<=90 || byte>=97 && byte<=122
     }
 }
 
 impl TryFrom<[u8; 4]> for ChunkType {
-    type Error = Error;
+    type Error = ChunkTypeError;
 
-    fn try_from(bytes: [u8; 4]) -> Result<Self,Error> {
-        let mut data = vec![];
-        for &byte in bytes.iter()
+    fn try_from(bytes: [u8; 4]) -> Result<Self,ChunkTypeError> {
+        let chunk_type = ChunkType { bytes };
+        // todo!()
+        if !chunk_type.is_valid()
         {
-            if byte<=255{
-             data.push(byte);   
-            }
-            else {
-                return Err(Error::InvalidByteValue);
-            }
+            return Err(ChunkTypeError::InvalidChunkType);
         }
-        let chunk_type = ChunkType{data:data};
         Ok(chunk_type)
+        
+    }
 }
 
-// impl fmt::Display for ChunkType {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         todo!()
-//     }
-// }
-
-// impl FromStr for ChunkType {
-//     type Err = Error;
-
-//     fn from_str(s: &str) -> Result<Self> {
-//         todo!()
-//     }
-// }
-}
+impl fmt::Display for ChunkType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        todo!()
+    }
 }
 
+impl FromStr for ChunkType {
+    type Err = ChunkTypeError;
 
-mod tests{
-    use super::chunk_type;
+    fn from_str(s: &str) -> Result<Self,ChunkTypeError> {
+        let bytes:Vec<u8>= s.chars().map(|letter|letter as u8).collect();
+        ChunkType::try_from(<Vec<u8> as TryInto<[u8;4]>>::try_into(bytes).unwrap())
+    }
+}
 
-#[test]
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::convert::TryFrom;
+    use std::str::FromStr;
+
+    #[test]
     pub fn test_chunk_type_from_bytes() {
         let expected = [82, 117, 83, 116];
         let actual = ChunkType::try_from([82, 117, 83, 116]).unwrap();
+
         assert_eq!(expected, actual.bytes());
     }
+
+    #[test]
+    
+    pub fn test_chunk_type_from_str() {
+        let expected = ChunkType::try_from([82, 117, 83, 116]).unwrap();
+        let actual = ChunkType::from_str("RuSt").unwrap();
+        assert_eq!(expected, actual);
+    }
 }
+
