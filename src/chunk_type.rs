@@ -27,7 +27,7 @@ impl ChunkType {
 
     /// Returns the property state of the first byte as described in the PNG spec
     pub fn is_critical(&self) -> bool {
-        todo!()
+        self.bytes()[0]>=65 && self.bytes()[0]<=90
     }
 
     /// Returns the property state of the second byte as described in the PNG spec
@@ -114,6 +114,17 @@ mod tests {
         let expected = ChunkType::try_from([82, 117, 83, 116]).unwrap();
         let actual = ChunkType::from_str("RuSt").unwrap();
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    pub fn test_chunk_type_is_critical() {
+        let chunk = ChunkType::from_str("RuSt").unwrap();
+        assert!(chunk.is_critical());
+    }
+    #[test]
+    pub fn test_chunk_type_is_not_critical() {
+        let chunk = ChunkType::from_str("ruSt").unwrap();
+        assert!(!chunk.is_critical());
     }
 }
 
