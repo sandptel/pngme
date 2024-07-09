@@ -12,6 +12,7 @@ use crate::chunk_type;
 
 use super::chunk_type::ChunkType;
 
+#[derive(Debug)]
 pub struct Chunk{
     data: Vec<u8>,
     chunk_type: ChunkType,
@@ -55,19 +56,28 @@ impl Chunk{
         }
     }
 
-    fn data_as_string(&self) -> Result<String, std::string::FromUtf8Error>{
+   pub fn as_bytes(&self)-> Vec<u8>{
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&self.length.to_be_bytes());
+        bytes.extend_from_slice(&self.chunk_type.bytes());
+        bytes.extend_from_slice(&self.data);
+        bytes.extend_from_slice(&self.crc.to_be_bytes());
+        bytes
+    }
+
+    pub fn data_as_string(&self) -> Result<String, std::string::FromUtf8Error>{
         String::from_utf8(self.data.clone())
     }
 
-    fn length(&self)->u32{
+    pub fn length(&self)->u32{
         self.data.len() as u32
     }
 
-    fn chunk_type(&self) -> &ChunkType{
+    pub fn chunk_type(&self) -> &ChunkType{
         &self.chunk_type
     }
 
-    fn data(&self) -> &[u8]
+    pub fn data(&self) -> &[u8]
     {
         &self.data
     }
